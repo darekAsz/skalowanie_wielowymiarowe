@@ -1,0 +1,292 @@
+ffunction varargout = SI_projekt(varargin)
+% SI_PROJEKT MATLAB code for SI_projekt.fig
+%      SI_PROJEKT, by itself, creates a new SI_PROJEKT or raises the existing
+%      singleton*.
+%
+%      H = SI_PROJEKT returns the handle to a new SI_PROJEKT or the handle to
+%      the existing singleton*.
+%
+%      SI_PROJEKT('CALLBACK',hObject,eventData,handles,...) calls the local
+%      function named CALLBACK in SI_PROJEKT.M with the given input arguments.
+%
+%      SI_PROJEKT('Property','Value',...) creates a new SI_PROJEKT or raises the
+%      existing singleton*.  Starting from the left, property value pairs are
+%      applied to the GUI before SI_projekt_OpeningFcn gets called.  An
+%      unrecognized property name or invalid value makes property application
+%      stop.  All inputs are passed to SI_projekt_OpeningFcn via varargin.
+%
+%      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
+%      instance to run (singleton)".
+%
+% See also: GUIDE, GUIDATA, GUIHANDLES
+
+% Edit the above text to modify the response to help SI_projekt
+
+% Last Modified by GUIDE v2.5 26-May-2016 13:28:17
+
+% Begin initialization code - DO NOT EDIT
+gui_Singleton = 1;
+gui_State = struct('gui_Name',       mfilename, ...
+                   'gui_Singleton',  gui_Singleton, ...
+                   'gui_OpeningFcn', @SI_projekt_OpeningFcn, ...
+                   'gui_OutputFcn',  @SI_projekt_OutputFcn, ...
+                   'gui_LayoutFcn',  [] , ...
+                   'gui_Callback',   []);
+if nargin && ischar(varargin{1})
+    gui_State.gui_Callback = str2func(varargin{1});
+end
+
+if nargout
+    [varargout{1:nargout}] = gui_mainfcn(gui_State, varargin{:});
+else
+    gui_mainfcn(gui_State, varargin{:});
+end
+% End initialization code - DO NOT EDIT
+
+
+% --- Executes just before SI_projekt is made visible.
+function SI_projekt_OpeningFcn(hObject, eventdata, handles, varargin)
+% This function has no output args, see OutputFcn.
+% hObject    handle to figure
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+% varargin   command line arguments to SI_projekt (see VARARGIN)
+
+% Choose default command line output for SI_projekt
+handles.output = hObject;
+
+% Update handles structure
+guidata(hObject, handles);
+
+% UIWAIT makes SI_projekt wait for user response (see UIRESUME)
+% uiwait(handles.figure1);
+
+
+% --- Outputs from this function are returned to the command line.
+function varargout = SI_projekt_OutputFcn(hObject, eventdata, handles) 
+% varargout  cell array for returning output args (see VARARGOUT);
+% hObject    handle to figure
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Get default command line output from handles structure
+varargout{1} = handles.output;
+
+
+% --- Executes on button press in InputMatrixButton.
+function InputMatrixButton_Callback(hObject, eventdata, handles)
+
+[FileName,PathName] = uigetfile('*.txt','Wybierz swoja macierz');
+handles.FileName = FileName;
+
+address = [PathName FileName];
+
+s = dir(address);
+
+if s.bytes == 0         %file is empty
+    disp('Macierz nie mo¿e byæ pusta!')
+    set(handles.scaleButton,'Enable','off');
+    set(handles.numberFeatures,'Enable','off');
+    set(handles.errorInputBox,'Visible','on');
+    set(handles.infoInputBox, 'string','');
+else
+    M = dlmread(FileName);
+    handles.M = M;
+    [row_M col_M] = size(M);
+    handles.col_M = col_M;
+    handles.row_M = row_M;
+    set(handles.scaleButton,'Enable','on');
+    set(handles.numberFeatures,'Enable','on');
+    set(handles.errorInputBox,'Visible','off');
+    txt = [ 'Macierz zawiera: ' num2str(row_M) ' obiekty z ' num2str(col_M)  ' cechami'];
+    set(handles.infoInputBox, 'string',txt);
+end
+
+guidata(hObject, handles);
+% hObject    handle to InputMatrixButton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in scaleButton.
+function scaleButton_Callback(hObject, eventdata, handles)
+
+FileName = handles.FileName;
+M = handles.M;
+row_M = handles.row_M;
+col_M = handles.col_M;
+features = get(handles.numberFeatures, 'string');
+features = str2num(features);
+if isempty(features)
+    disp('Podana wartoœæ cech nie jest prawid³owa!')
+    set(handles.errorFeaturesBox,'Visible','on');
+    set(handles.numberFeatures, 'string','');
+    set(handles.differenceFeatures,'Visible','off');
+elseif handles.col_M <= features
+     disp('Iloœæ cech musi byæ mniejsza ni¿ pocz¹tkowa!')
+     set(handles.errorFeaturesBox,'Visible','off');
+     set(handles.differenceFeatures,'Visible','on');
+else
+     set(handles.errorFeaturesBox,'Visible','off');
+     set(handles.differenceFeatures,'Visible','off');
+     
+     
+     %%%%%%%%%%%%    genetyczny    %%%%%%%%%%%%%%%%
+     s=rng; % do randa
+ 
+	
+     ilosc_przemn = 10;
+	 przemn = zeros(col_M, features, ilosc_przemn);
+     nowe_przemn=zeros(col_M, features, ilosc_przemn);
+	 fitness = zeros(ilosc_przemn);
+	 rozmnazanie= 0.75;
+	 mutacja = 0.1;
+	 odleglosci_wejsciowej = zeros(row_M,row_M);
+	 wyjsciowa = zeros(row_M, features, ilosc_przemn);
+	 odleglosci_wyjsciowej = zeros(row_M,row_M,ilosc_przemn);
+	 roznica_odleglosci = zeros(ilosc_przemn);%%%%fitness
+	 suma_odl_wyjsc=zeros(ilosc_przemn);
+     % uzupelnienie poczatkowej macierzy przemn
+		for a = 1 : ilosc_przemn 
+			for b = 1 : col_M
+				for c = 1 : features
+					przemn ( b , c , a ) = rand() * 10;
+				end
+			end
+		end
+ 
+	% liczenie odleglosci dla macierzy wejsciowej
+	for a = 1 : row_M
+		for b = 1 : row_M
+		suma = 0;
+			for c = 1 : col_M
+				suma = suma + (M(a,c) - M(b,c))*(M(a,c) - M(b,c));	
+			end
+			odleglosci_wejsciowej(a,b) = sqrt(suma);
+		end
+	end
+	
+	
+	% liczenie sumy odleglosci dla macierzy wejsciowej
+	suma_odl_wejsc=0;
+	for a =1 : row_M
+		for b = a : col_M
+			suma_odl_wejsc=suma_odl_wejsc+odleglosci_wejsciowej(a,b);
+		end
+	end
+	
+	
+	
+	
+	
+	
+	
+	obiegow = 10000;
+	for x = 1 : obiegow %petla glowna%%%%%%%%%%%%%%%%%%%%%%
+ 
+		for a = 1 : ilosc_przemn
+			wyjsciowa(:,:,a) = M * przemn(:,:,a);	
+		end
+ 
+		%liczenie odleglosci punktow dla macierzy wyjsciowych
+		for ob = 1 : ilosc_przemn
+			for a = 1 : row_M
+				for b = 1 : row_M
+					suma = 0;
+					for c = 1 : features
+						suma = suma + (wyjsciowa(a,c,ob) - wyjsciowa(b,c,ob))*(wyjsciowa(a,c,ob) - wyjsciowa(b,c,ob));	
+					end
+					odleglosci_wyjsciowej(a,b,ob) = sqrt(suma);
+				end
+			end
+		end
+ 
+ 
+	%liczenie sumy odleglosci dla wyjsciowych
+		for i = 1 : ilosc_przemn
+			for a =1 : row_M
+				for b = a : col_M
+					suma_odl_wyjsc(i) = suma_odl_wyjsc(i) + odleglosci_wyjsciowej(a,b,i);
+				end
+			end
+			roznica_odleglosci(i) = abs( suma_odl_wejsc - suma_odl_wyjsc(i))
+		end
+		
+		
+		
+		
+		
+	
+		%ruletka i rozmnazanie
+		suma_ruletka = 7;
+		for i=1:ilosc_przemn
+			suma_ruletka = suma_ruletka + fitness(i);
+		end
+ 
+	ilosc_os = ilosc_przemn;
+	aktualne_zapelnienie = 0;
+    
+                while(ilosc_os)
+                    rodzic1 = 0;
+                    rodzic2 = 0;
+                    random1 = rand(1,1)*suma_ruletka;
+                    random2 = rand(1,1)*suma_ruletka;
+                    czy_rozmnaza = rand(1,1);
+
+                        if(czy_rozmnaza <= rozmnazanie)
+
+
+
+
+
+
+
+                        end
+
+                    %elseif %nie rozmnaza -> przepisanie 
+
+
+
+
+
+                    ilosc_os = ilosc_os-2;
+                end 
+ 
+ 
+ 
+ 
+	end %koniec petli glownej
+     
+     
+end
+
+
+% hObject    handle to scaleButton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+
+
+% --- Executes during object creation, after setting all properties.
+function numberFeatures_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to numberFeatures (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function numberFeatures_Callback(hObject, eventdata, handles)
+% hObject    handle to numberFeatures (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of numberFeatures as text
+%        str2double(get(hObject,'String')) returns contents of numberFeatures as a double
+
